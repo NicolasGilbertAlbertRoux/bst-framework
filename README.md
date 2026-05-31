@@ -7,8 +7,11 @@ The repository contains the reference experiments associated with the BST resear
 ## Repository Structure
 
 experiments/   Core numerical experiments
+
 results/       Generated outputs and validation artefacts
+
 scripts/       Reproduction utilities
+
 historical/    Previous research stages and precursor papers
 
 ## Core Research Themes
