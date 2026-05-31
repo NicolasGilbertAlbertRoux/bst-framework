@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+title: "BST Framework"
+message: "If you use this repository, please cite it using the metadata from this file."
+authors:
+  - family-names: "Roux"
+    given-names: "Nicolas Gilbert Albert"
+license: "MIT"
+repository-code: "https://github.com/NicolasGilbertAlbertRoux/bst-framework"
+abstract: >
+  Computational and historical research framework associated with Beating
+  Substrate Theory (BST), a reconstruction-oriented generative framework
+  investigating emergent physical organization from coherent substrate dynamics.
+keywords:
+  - BST
+  - Beating Substrate Theory
+  - emergent physics
+  - oscillatory substrate
+  - reconstruction framework
+  - computational physics
