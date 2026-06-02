@@ -5,6 +5,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 
 EXPERIMENTS = [
+    "experiments/00_prerequisites/generate_canonical_inputs.py",
     "experiments/01_closure/canonical_closure_law_test.py",
     "experiments/02_projection/latent_aliasing_scan.py",
     "experiments/03_memory/Rlambda_generative_memory_test.py",
