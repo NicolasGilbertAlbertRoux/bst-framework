@@ -1,31 +1,38 @@
 # Beating Substrate Theory (BST)
 
-Beating Substrate Theory (BST) is a computational framework exploring the emergence of observable physical structures from a discrete oscillatory substrate.
+Beating Substrate Theory (BST) is an experimental computational framework exploring the emergence of observable structures from a discrete oscillatory substrate.
 
-The repository contains the reference experiments associated with the BST research program and the historical research path that led to the current formulation.
+This repository contains the reference numerical experiments developed within the BST research program, together with the supporting infrastructure required for reproducibility and further investigation.
+
+The repository focuses on computational reconstruction and experimental exploration. Interpretative, theoretical, and correspondence studies are maintained separately from the framework itself.
 
 ## Repository Structure
 
-experiments/   Core numerical experiments
+experiments/   Numerical experiments and reconstruction studies
 
 results/       Generated outputs and validation artefacts
 
-scripts/       Reproduction utilities
+scripts/       Reproduction and utility scripts
 
-historical/    Previous research stages and precursor papers
+historical/    Historical research stages and precursor documents
 
-## Core Research Themes
+## Experimental Scope
 
-The repository investigates several complementary aspects of BST:
+The framework currently includes experiments investigating:
 
 - Closure dynamics
 - Latent projection and observable equivalence
-- Reconstructive memory
+- Reconstruction and generative memory
 - Arbitration and branch selection
 - Multi-resolution (Zeta) dynamics
 - Emergent geometry
-- String-inspired bridge constructions
-- Robustness and falsifiability tests
+- Interaction and matter reconstruction
+- Vacuum-wave backgrounds
+- Structure formation
+- Curvature and gravity-like emergence
+- Robustness and falsifiability analyses
+
+Experiments are organized progressively, culminating in the higher-level reconstruction studies documented as Experiments 20–71.
 
 ## Installation
 
@@ -35,15 +42,17 @@ Create a Python environment and install the required dependencies:
 pip install -r requirements.txt
 ```
 
-## Reproducing Experiments
+## Running Experiments
 
-Run individual experiments directly:
+Individual experiments can be executed directly:
 
 ```bash
 python experiments/01_closure/canonical_closure_law_test.py
 ```
 
-or use the repository reproduction script:
+Some higher-level experiments are included for completeness and reproducibility purposes and may require substantial computation time.
+
+A repository-wide reproduction utility is also provided:
 
 ```bash
 python scripts/reproduce.py
@@ -51,9 +60,15 @@ python scripts/reproduce.py
 
 ## Historical Research
 
-The historical/ directory contains the sequence of research papers and intermediate developments that progressively led to the current BST formulation.
+The historical/ directory contains archived research documents and intermediate development stages that contributed to the evolution of the BST framework.
 
-These documents are preserved for transparency and traceability.
+These materials are preserved for transparency and traceability.
+
+## Reproducibility
+
+The primary purpose of this repository is reproducibility.
+
+All scientific claims associated with BST should be evaluated through the experiments, generated outputs, and validation procedures contained within the framework.
 
 ## Citation
 
