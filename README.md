@@ -32,7 +32,11 @@ The framework currently includes experiments investigating:
 - Curvature and gravity-like emergence
 - Robustness and falsifiability analyses
 
-Experiments are organized progressively, culminating in the higher-level reconstruction studies documented as Experiments 20–71.
+Experiments are organized progressively.
+
+The repository includes foundational experiments (00–19), intermediate reconstruction studies (20–56), and higher-level reconstruction and synthesis experiments (57–71).
+
+Not all experiments are executed by the default reproduction script.
 
 ## Installation
 
@@ -57,6 +61,10 @@ A repository-wide reproduction utility is also provided:
 ```bash
 python scripts/reproduce.py
 ```
+
+The default reproduction script currently executes the foundational experiment suite used for framework validation.
+
+Additional experiments, including higher-level reconstruction studies and synthesis milestones, are available in the experiments/ directory and may be executed individually when required.
 
 ## Historical Research
 
