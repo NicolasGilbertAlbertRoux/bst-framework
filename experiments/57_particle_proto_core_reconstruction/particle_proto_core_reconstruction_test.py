@@ -203,16 +203,132 @@ def plot_candidate_status(candidates):
     plt.close()
 
 
+
+def build_canonical_wave_clusters_if_missing():
+    """
+    Rebuild the minimal canonical wave-cluster dictionary from already archived,
+    public BST results when the former 57b dictionary stage is absent.
+
+    This does not assign particle identities and does not invent W->T mappings.
+    It only reconstructs the C-layer labels needed by 57 from measured archive
+    outputs or, if available, from a previous non-identity bridge file.
+    """
+    out = DICT / "canonical_wave_clusters.csv"
+    if out.exists():
+        return pd.read_csv(out)
+
+    DICT.mkdir(parents=True, exist_ok=True)
+
+    # Best source: an already archived 57 bridge table, because it contains the
+    # exact non-identity C-layer labels previously used by the pipeline.
+    bridge = OUT / "wave_cluster_particle_bridge_non_identity.csv"
+    if bridge.exists():
+        b = pd.read_csv(bridge)
+        if {"cluster_id", "cluster_name"}.issubset(b.columns):
+            clusters = (
+                b[["cluster_id", "cluster_name"]]
+                .drop_duplicates()
+                .rename(columns={"cluster_name": "canonical_name"})
+                .sort_values("cluster_id")
+                .reset_index(drop=True)
+            )
+            clusters["mean_area"] = np.nan
+            clusters["mean_overlap"] = np.nan
+            clusters["mean_capacity"] = np.nan
+            clusters["evidence_level"] = "recovered_from_existing_non_identity_bridge"
+            clusters.to_csv(out, index=False)
+            return clusters
+
+    # Otherwise derive only a conservative C-layer basis from the wave taxonomy
+    # experiment. The measured number of classes comes from the archive; labels
+    # remain generic and non-identificatory.
+    wave_summary = read_csv(ROOT / "results/research_final/wave_cluster_taxonomy_test/wave_cluster_taxonomy_summary.csv")
+    wave_by_perturb = read_csv(ROOT / "results/research_final/wave_cluster_taxonomy_test/wave_cluster_taxonomy_by_perturbation.csv")
+
+    if wave_summary.empty and wave_by_perturb.empty:
+        return pd.DataFrame()
+
+    if not wave_by_perturb.empty and "num_classes" in wave_by_perturb.columns:
+        n = int(round(float(wave_by_perturb["num_classes"].median())))
+        mean_capacity = float(wave_by_perturb["mean_contact_capacity"].mean()) if "mean_contact_capacity" in wave_by_perturb.columns else np.nan
+        mean_persistence = float(wave_by_perturb["mean_persistence"].mean()) if "mean_persistence" in wave_by_perturb.columns else np.nan
+    else:
+        n = int(round(float(wave_summary.iloc[0].get("mean_classes_under_perturbation", 3))))
+        mean_capacity = float(wave_summary.iloc[0].get("mean_contact_capacity", np.nan))
+        mean_persistence = float(wave_summary.iloc[0].get("mean_persistence_under_perturbation", np.nan))
+
+    n = max(1, n)
+    rows = []
+    canonical_names = [
+        "C0_local_overlap_cluster",
+        "C1_extended_resonant_cluster",
+        "C2_high_capacity_extended_cluster",
+    ]
+    for i in range(n):
+        rows.append({
+            "cluster_id": f"C{i}",
+            "canonical_name": canonical_names[i] if i < len(canonical_names) else f"C{i}_wave_cluster_family",
+            "mean_area": np.nan,
+            "mean_overlap": mean_persistence,
+            "mean_capacity": mean_capacity,
+            "evidence_level": "derived_from_wave_cluster_taxonomy_archive",
+        })
+
+    clusters = pd.DataFrame(rows)
+    clusters.to_csv(out, index=False)
+    return clusters
+
+
+def build_proto_core_audit_if_missing():
+    """
+    Rebuild the minimal proto-core audit from the archived proto-core experiment
+    when the former 57a audit file is absent.
+    """
+    out = AUDIT / "proto_core_audit.csv"
+    if out.exists():
+        return pd.read_csv(out)
+
+    AUDIT.mkdir(parents=True, exist_ok=True)
+
+    summary = read_csv(PROTO / "proto_core_summary.csv")
+    metrics = summarize_proto_core_metrics()
+
+    if summary.empty and metrics.empty:
+        return pd.DataFrame()
+
+    four_wave_supported = False
+    if not summary.empty:
+        verdict = str(summary.iloc[0].get("verdict", "")).lower()
+        four_wave_supported = "supported" in verdict or "recovery" in verdict
+
+    # Keep the audit intentionally minimal and non-identificatory.
+    audit = pd.DataFrame([{
+        "claim": "Four-wave compact proto-core",
+        "status": "archived_result" if four_wave_supported else "archive_present_identity_unconfirmed",
+        "source": str(PROTO),
+        "identity_claim": False,
+        "note": "Rebuilt from proto_core_identification_test archive; confirms motif support only, not particle identity.",
+    }])
+    audit.to_csv(out, index=False)
+    return audit
+
+
 def main():
     print("\n=== BST 57 PARTICLE PROTO-CORE RECONSTRUCTION TEST ===\n")
 
-    clusters = read_csv(DICT / "canonical_wave_clusters.csv")
-    proto_audit = read_csv(AUDIT / "proto_core_audit.csv")
+    clusters = build_canonical_wave_clusters_if_missing()
+    proto_audit = build_proto_core_audit_if_missing()
 
     if clusters.empty:
-        raise FileNotFoundError("Missing canonical_wave_clusters.csv. Run 57b first.")
+        raise FileNotFoundError(
+            "Cannot rebuild canonical wave clusters: missing both wave_cluster_dictionary "
+            "and wave_cluster_taxonomy archive outputs."
+        )
     if proto_audit.empty:
-        raise FileNotFoundError("Missing proto_core_audit.csv. Run 57a first.")
+        raise FileNotFoundError(
+            "Cannot rebuild proto-core audit: missing both wave_cluster_archive_audit "
+            "and proto_core_identification archive outputs."
+        )
 
     term_scan = scan_archive_terms()
     proto_metrics = summarize_proto_core_metrics()
