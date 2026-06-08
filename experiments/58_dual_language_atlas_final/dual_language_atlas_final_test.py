@@ -40,11 +40,133 @@ def savefig(name):
     plt.savefig(OUT / name, dpi=220)
     plt.close()
 
+
+def build_dictionary_from_archives_if_missing():
+    """
+    Rebuild the old wave_cluster_dictionary artefacts from archived BST result
+    tables when the former 57b stage is absent.
+
+    This is a data-derived compatibility layer for the atlas only:
+    - no exact W->T identity is introduced;
+    - no particle identity is introduced;
+    - generated alignments are explicitly labelled as metric proxies.
+    """
+    dict_dir = DIRS["dict"]
+    dict_dir.mkdir(parents=True, exist_ok=True)
+
+    clusters_path = dict_dir / "canonical_wave_clusters.csv"
+    contacts_path = dict_dir / "canonical_contact_signatures.csv"
+    alignment_path = dict_dir / "cluster_contact_metric_alignment.csv"
+
+    # 1) Canonical wave clusters
+    if not clusters_path.exists():
+        bridge = DIRS["particle"] / "wave_cluster_particle_bridge_non_identity.csv"
+        wave_summary = DIRS["wave"] / "wave_cluster_taxonomy_summary.csv"
+        wave_by_perturb = DIRS["wave"] / "wave_cluster_taxonomy_by_perturbation.csv"
+
+        clusters = pd.DataFrame()
+        if bridge.exists():
+            b = pd.read_csv(bridge)
+            if {"cluster_id", "cluster_name"}.issubset(b.columns):
+                clusters = (
+                    b[["cluster_id", "cluster_name"]]
+                    .drop_duplicates()
+                    .rename(columns={"cluster_name": "canonical_name"})
+                    .sort_values("cluster_id")
+                    .reset_index(drop=True)
+                )
+                clusters["mean_area"] = np.nan
+                clusters["mean_overlap"] = np.nan
+                clusters["mean_capacity"] = np.nan
+                clusters["evidence_level"] = "recovered_from_particle_non_identity_bridge"
+
+        if clusters.empty:
+            wb = pd.read_csv(wave_by_perturb) if wave_by_perturb.exists() else pd.DataFrame()
+            ws = pd.read_csv(wave_summary) if wave_summary.exists() else pd.DataFrame()
+            if not wb.empty and "num_classes" in wb.columns:
+                n = int(round(float(wb["num_classes"].median())))
+                mean_capacity = float(wb["mean_contact_capacity"].mean()) if "mean_contact_capacity" in wb.columns else np.nan
+                mean_persistence = float(wb["mean_persistence"].mean()) if "mean_persistence" in wb.columns else np.nan
+            elif not ws.empty:
+                n = int(round(float(ws.iloc[0].get("mean_classes_under_perturbation", 3))))
+                mean_capacity = float(ws.iloc[0].get("mean_contact_capacity", np.nan))
+                mean_persistence = float(ws.iloc[0].get("mean_persistence_under_perturbation", np.nan))
+            else:
+                n = 0
+                mean_capacity = np.nan
+                mean_persistence = np.nan
+
+            canonical_names = [
+                "C0_local_overlap_cluster",
+                "C1_extended_resonant_cluster",
+                "C2_high_capacity_extended_cluster",
+            ]
+            rows = []
+            for i in range(max(0, n)):
+                rows.append({
+                    "cluster_id": f"C{i}",
+                    "canonical_name": canonical_names[i] if i < len(canonical_names) else f"C{i}_wave_cluster_family",
+                    "mean_area": np.nan,
+                    "mean_overlap": mean_persistence,
+                    "mean_capacity": mean_capacity,
+                    "evidence_level": "derived_from_wave_cluster_taxonomy_archive",
+                })
+            clusters = pd.DataFrame(rows)
+
+        if not clusters.empty:
+            clusters.to_csv(clusters_path, index=False)
+
+    # 2) Canonical contact signatures
+    if not contacts_path.exists():
+        species_path = DIRS["contact"] / "contact_matter_taxonomy_by_species.csv"
+        if species_path.exists():
+            sp = pd.read_csv(species_path)
+            if "matter_species" in sp.columns:
+                contacts = pd.DataFrame({
+                    "contact_species": sp["matter_species"].apply(lambda x: f"T{int(x):02d}"),
+                    "contact_name": sp["matter_species"].apply(lambda x: f"T{int(x):02d}_periodic_contact_species"),
+                    "contact_family": np.where(
+                        sp.get("mean_loop_score", 0) >= sp.get("mean_tunnel_score", 0),
+                        "loop-dominant",
+                        "tunnel-dominant",
+                    ),
+                    "capacity": sp.get("mean_contact_capacity", np.nan),
+                    "loop_score": sp.get("mean_loop_score", np.nan),
+                    "tunnel_score": sp.get("mean_tunnel_score", np.nan),
+                    "recurrence_strength": sp.get("mean_recurrence_strength", np.nan),
+                    "evidence_level": "derived_from_contact_matter_taxonomy_archive",
+                })
+                contacts.to_csv(contacts_path, index=False)
+
+    # 3) Non-exact metric alignment proxy
+    if not alignment_path.exists() and clusters_path.exists() and contacts_path.exists():
+        clusters = pd.read_csv(clusters_path)
+        contacts = pd.read_csv(contacts_path)
+        rows = []
+        for _, c in clusters.iterrows():
+            cap = float(c.get("mean_capacity", np.nan))
+            for _, t in contacts.iterrows():
+                tcap = float(t.get("capacity", np.nan))
+                if np.isfinite(cap) and np.isfinite(tcap):
+                    score = 1.0 / (1.0 + abs(cap - tcap))
+                else:
+                    score = float(t.get("recurrence_strength", 0.0)) if np.isfinite(float(t.get("recurrence_strength", np.nan))) else 0.5
+                rows.append({
+                    "cluster_id": c["cluster_id"],
+                    "contact_species": t["contact_species"],
+                    "alignment_score": score,
+                    "evidence_level": "metric_proxy_not_identity",
+                })
+        pd.DataFrame(rows).to_csv(alignment_path, index=False)
+
+
 def build_data():
+    build_dictionary_from_archives_if_missing()
+
     clusters = read_required(DIRS["dict"] / "canonical_wave_clusters.csv")
     contacts = read_required(DIRS["dict"] / "canonical_contact_signatures.csv")
     alignment = read_required(DIRS["dict"] / "cluster_contact_metric_alignment.csv")
-    rosetta = read_required(DIRS["rosetta"] / "corrected_wave_rosetta_dictionary.csv")
+    rosetta = read_optional(DIRS["rosetta"] / "corrected_wave_rosetta_dictionary.csv")
     particle = read_required(DIRS["particle"] / "particle_proto_core_reconstruction_summary.csv")
     particle_candidates = read_required(DIRS["particle"] / "particle_proto_core_candidates.csv")
     elements = read_optional(DIRS["periodic"] / "full_periodic_H_Lr_by_element.csv")
