@@ -76,7 +76,29 @@ These materials are preserved for transparency and traceability.
 
 The primary purpose of this repository is reproducibility.
 
-All scientific claims associated with BST should be evaluated through the experiments, generated outputs, and validation procedures contained within the framework.
+All scientific claims associated with BST should be evaluated through the experiments, generated outputs, validation procedures, and formal verification resources associated with the framework.
+
+Numerical experiments, reconstruction studies, and independent formal verification are provided to facilitate transparent evaluation and replication of results.
+
+## Formal Verification (Lean 4)
+
+In addition to the numerical experiments contained in this repository, a Lean 4 formalization of the BST theorem framework has been developed.
+
+The purpose of the formalization is not to establish the physical validity of BST, but to verify that the formalized theorem chain follows rigorously from the adopted definitions and assumptions.
+
+Current verification status:
+
+- 27 verified Lean modules
+- 0 compilation errors
+- 0 warnings
+- 0 sorry
+- No additional axioms introduced
+
+The Lean project provides an independent logical consistency check that complements the experimental and computational results contained in this repository.
+
+The formalization currently covers major components of the BST framework, including reconstruction, closure dynamics, observable equivalence, arbitration, branch selection, emergent geometry, wave-cluster taxonomy, periodic attractors, matter taxonomy, topological selection, contact networks, and universality.
+
+The Lean formalization is maintained separately from the experimental framework and may be consulted independently by reviewers interested in formal verification.
 
 ## Citation
 
